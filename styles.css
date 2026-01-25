@@ -1,0 +1,538 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #0a0a0a;
+    --text-secondary: #5a5a5a;
+    --border-color: #e5e5e5;
+    --shadow: rgba(0, 0, 0, 0.03);
+    --shadow-hover: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+    --bg-color: #0a0a0a;
+    --text-color: #f5f5f5;
+    --text-secondary: #9a9a9a;
+    --border-color: #252525;
+    --shadow: rgba(0, 0, 0, 0.4);
+    --shadow-hover: rgba(0, 0, 0, 0.6);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 19px;
+    line-height: 1.75;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 810px;
+    margin: 0 auto;
+    padding: 4rem 2.5rem;
+    min-height: 100vh;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
+    letter-spacing: -0.011em;
+}
+
+header {
+    margin-bottom: 3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+
+.site-title {
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    letter-spacing: -0.02em;
+    position: relative;
+}
+
+.site-title:hover {
+    color: var(--text-secondary);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+}
+
+.theme-toggle:hover {
+    color: var(--text-color);
+}
+
+.theme-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Landing Section */
+.landing-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 70vh;
+    justify-content: center;
+    padding: 2rem 0;
+    animation: fadeIn 0.6s ease-out;
+    margin-bottom: 4rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+.profile-container {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.profile-container:hover .profile-picture {
+    transform: scale(1.05) rotate(3deg);
+}
+
+.profile-tooltip {
+    position: absolute;
+    bottom: 0;
+    left: calc(100% + 1rem);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    white-space: nowrap;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.profile-container:hover .profile-tooltip {
+    opacity: 0.7;
+}
+
+.name-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.profile-picture {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 8px 24px var(--shadow);
+    background: var(--border-color);
+    position: relative;
+    display: block;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+
+.profile-picture:not([src]),
+.profile-picture[src=""] {
+    background: linear-gradient(135deg, var(--border-color) 0%, var(--text-secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-color);
+    font-size: 3rem;
+}
+
+main {
+    margin-bottom: 4rem;
+}
+
+.section {
+    margin-bottom: 4rem;
+}
+
+h1 {
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    animation: fadeIn 0.8s ease-out 0.3s both;
+    line-height: 1.15;
+    display: flex;
+    align-items: center;
+}
+
+h2 {
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: 2.25rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: 2.5rem;
+    margin-top: 0;
+    color: var(--text-color);
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-icon {
+    flex-shrink: 0;
+    filter: url(#rough-icon);
+    opacity: 0.8;
+}
+
+.section-icon[src] {
+    object-fit: contain;
+}
+
+.bio-content {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    max-width: 100%;
+}
+
+.bio-header {
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: 2.25rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    margin-top: 0;
+    color: var(--text-color);
+    padding-bottom: 0;
+    border-bottom: none;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bio-content p {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-bottom: 0;
+    color: var(--text-color);
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    font-size: 0.95rem;
+}
+
+.bio-content a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color 0.2s ease;
+}
+
+.bio-content a:hover {
+    color: var(--text-color);
+}
+
+.bio-content br {
+    display: block;
+    content: "";
+    margin-top: 0.5rem;
+}
+
+h3 {
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    letter-spacing: -0.015em;
+    line-height: 1.35;
+}
+
+.content {
+    margin-top: 1.5rem;
+}
+
+.content p {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-weight: 400;
+    line-height: 1.8;
+    letter-spacing: -0.012em;
+}
+
+.links {
+    margin-top: 0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.name-title .links {
+    margin-top: 0.25rem;
+}
+
+.links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0;
+    transition: all 0.2s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.links a:hover {
+    color: var(--text-secondary);
+    text-decoration: underline;
+}
+
+.separator {
+    color: var(--text-secondary);
+    font-weight: 300;
+}
+
+.project {
+    margin-bottom: 3.5rem;
+    padding: 0;
+    transition: opacity 0.3s ease;
+}
+
+.project:hover {
+    opacity: 0.85;
+}
+
+.project:last-child {
+    margin-bottom: 0;
+}
+
+.project h3 a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.project h3 a:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.project-description {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    color: var(--text-secondary);
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    font-size: 0.95rem;
+}
+
+.project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: -1rem;
+}
+
+.tech-tag {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 0;
+    background: none;
+    border: none;
+    font-weight: 400;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.tech-tag:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.writing {
+    margin-bottom: 3.5rem;
+    padding: 0;
+    transition: opacity 0.3s ease;
+}
+
+.writing:hover {
+    opacity: 0.85;
+}
+
+.writing:last-child {
+    margin-bottom: 0;
+}
+
+.writing-date {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    font-weight: 400;
+    font-family: 'Crimson Pro', 'Charter', 'Bitstream Charter', 'Sitka Text', 'Georgia', 'Times New Roman', serif;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.writing-link {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.writing-link:hover {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+.writing-excerpt {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    font-size: 0.95rem;
+}
+
+.writing-page {
+    max-width: 100%;
+}
+
+.writing-page h1 {
+    margin-bottom: 1.5rem;
+}
+
+.writing-content {
+    margin-top: 2rem;
+}
+
+.writing-content p {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-weight: 400;
+    line-height: 1.8;
+    letter-spacing: -0.012em;
+    font-size: 1rem;
+}
+
+footer {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    margin-top: 6rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+    font-style: normal;
+    letter-spacing: 0.01em;
+}
+
+
+@media (max-width: 600px) {
+    body {
+        padding: 2rem 1.5rem;
+        font-size: 16px;
+    }
+
+    header {
+        margin-bottom: 3rem;
+    }
+
+    nav {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .nav-links {
+        gap: 1.5rem;
+    }
+
+    .profile-picture {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-header {
+        gap: 1.5rem;
+    }
+}

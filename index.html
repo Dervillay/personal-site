@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal website and portfolio of James GB - Software Engineer">
+    <title>James GB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <filter id="rough-icon" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="2" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/>
+            </filter>
+        </defs>
+    </svg>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="#landing" class="site-title">James GB</a>
+            <div class="nav-right">
+                <div class="nav-links">
+                    <a href="index.html#projects" class="nav-link">Projects</a>
+                    <a href="#writings" class="nav-link">Things I've Written</a>
+                </div>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="landing" class="landing-section">
+            <div class="profile-header">
+                <div class="profile-container">
+                    <img src="profile-picture.png" alt="James GB" class="profile-picture" id="profile-picture">
+                    <span class="profile-tooltip">(this is what I look like!)</span>
+                </div>
+                <div class="name-title">
+                    <h1>
+                        James Gascoigne-Burns
+                    </h1>
+                    <div class="links">
+                        <a href="https://github.com/dervillay" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <span class="separator">·</span>
+                        <a href="https://www.linkedin.com/in/james-gascoigne-burns-68bb21174/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                        <span class="separator">·</span>
+                        <a href="https://scholar.google.com/scholar?cluster=16149232136833562439&hl=en&as_sdt=0,5" target="_blank" rel="noopener noreferrer">Google Scholar</a>
+                        <span class="separator">·</span>
+                        <a href="mailto:james.gascoigne-burns7@gmail.com">Email</a>
+                    </div>
+                    <div class="bio-content">
+                        <p>
+                            London-based software engineer <a href="https://www.palantir.com/uk/government/" target="_blank" rel="noopener noreferrer">helping the UK government</a> use its data to make better decisions.
+                            <br/>
+                            I care a lot about making the world better, which I currently try to do through my work, <a href="https://www.givingwhatwecan.org/" target="_blank" rel="noopener noreferrer">pledging</a> part of my salary to <a href="https://www.givingwhatwecan.org/best-charities-to-donate-to-2026" target="_blank" rel="noopener noreferrer">high-impact charities</a>, and more recently by building skills to make AI safer.
+                            <br/>
+                            In my free time, you can find me playing board games, listening to music, and trying to learn my partner's native language, Czech (je to velmi těžké).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="section">
+            <h2>
+                <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: url(#rough-icon);">
+                    <path d="M4 6h16v14H4z"></path>
+                    <path d="M4 6l0-2c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                Projects
+            </h2>
+            <div class="content">
+                <article class="project">
+                    <h3><a href="https://github.com/dervillay/BGChat" target="_blank" rel="noopener noreferrer">BGChat</a></h3>
+                    <p class="project-description">
+                        Open source AI chatbot for board game rules with rulebook citations and previews. Saves you flicking through rulebooks to understand the rules and settle disputes.
+                    </p>
+                    <div class="project-meta">
+                        <span class="tech-tag">TypeScript</span>
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">Python</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="writings" class="section">
+            <h2>
+                <svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 3h14v18H5z"></path>
+                    <path d="M8 8.5c0.2 0.1 1.5 0.3 2.2 0.4 0.7 0.1 1.3 0 1.9 0.1 0.6 0.1 1.1 0.2 1.4 0"></path>
+                    <path d="M8 11.5c0.1 0 1.2 0.2 1.8 0.3 0.6 0.1 1.1 0 1.5 0.1 0.4 0.1 0.8 0.2 1.1 0"></path>
+                    <path d="M8 14.5c0.1 0 1 0.1 1.5 0.2 0.5 0.1 1 0 1.3 0.1 0.3 0.1 0.6 0.2 0.8 0"></path>
+                    <path d="M8 17.5c0.1 0 0.8 0.1 1.2 0.1 0.4 0 0.7 0 0.9 0.1"></path>
+                </svg>
+                Things I've Written
+            </h2>
+            <div class="content">
+                <article class="writing">
+                    <time class="writing-date">2026-01-25</time>
+                    <h3><a href="writings/writing-1.html" class="writing-link">Some crazy good writing</a></h3>
+                    <p class="writing-excerpt">
+                        This is a placeholder for something great I'll write soon.
+                    </p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+        
+    <footer/>
+
+    <script src="script.js"></script>
+</body>
+</html>
