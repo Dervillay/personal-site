@@ -113,11 +113,13 @@ function formatDate(dateValue) {
 
 function generateWritingsListHtml(writings) {
     return writings.map(w => `                <article class="writing">
-                    <time class="writing-date">${escapeHtml(w.date)}</time>
                     <h3><a href="writings/${w.slug}.html" class="writing-link">${escapeHtml(w.title)}</a></h3>
                     <p class="writing-excerpt">
                         ${escapeHtml(w.excerpt)}
                     </p>
+                    <div class="writing-meta-home">
+                        <time class="writing-date">${escapeHtml(w.date)}</time>
+                    </div>
                 </article>`).join('\n');
 }
 

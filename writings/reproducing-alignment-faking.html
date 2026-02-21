@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Writing by James GB">
+    <title>Reproducing Alignment Faking in Large Language Models - James GB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <filter id="rough-icon" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="2" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/>
+            </filter>
+        </defs>
+    </svg>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="../index.html" class="site-title">James GB</a>
+            <div class="nav-right">
+                <div class="nav-links">
+                    <a href="../index.html#projects" class="nav-link">Projects</a>
+                    <a href="../index.html#writings" class="nav-link">Things I've Written</a>
+                </div>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <article class="writing-page">
+            <h1>Reproducing Alignment Faking in Large Language Models</h1>
+            <div class="writing-meta">
+                <time class="writing-date">2026-01-25</time>
+                <span class="writing-reading-time">5 min read</span>
+            </div>
+            <div class="writing-content">
+                <blockquote>
+<p>This blog post is a work in progress. I&#39;m pushing to github little and often for fear that my laptop will die and take all of my writing with it</p>
+</blockquote>
+<h2 id="summary">Summary</h2>
+<ul>
+<li>I reproduced <a href="https://www.anthropic.com/research/alignment-faking">Alignment Faking in Large Language Models</a>&#39;s experimental setup and analyse results for <code>Llama-3.1-8B-Instruct</code> and <code>Llama-3.1-70b-Instruct</code> (the other models investigated in the paper are no longer available for inference via API)</li>
+<li>Neither model showed a significant compliance gap between &#39;training&#39; and &#39;unmonitored&#39; settings in both the Cot and no-CoT setup, nor was there any evidence of alignment faking behaviour</li>
+<li>I show that the unverified proxy used for classifying compliance in the original paper is unreliable for weaker models</li>
+<li>Using a model as a judge, I show that false positive and false negative detections of compliance can be significantly reduced, yielding data with reduced evidence of alignment faking compared to the original paper&#39;s results</li>
+<li>Contrary to the original paper&#39;s results, I show that the no-CoT setting results in a lower refusal rate for both models, and suggest that this is because the models are less able to reason about the harmfulness of the request</li>
+<li>My fork of their code, containing my extensions, results, and a script for estimating the token cost of equivalent experiments for arbitrary models can be found <a href="https://github.com/Dervillay/alignment-faking-repro">here</a></li>
+<li>For future work, I plan to run the same experiments on current frontier models from different providers to see whether alignment faking is present, read their chains of thought to reason about <em>why</em> and under what conditions they fake alignment, and any notable differences between models from different providers</li>
+</ul>
+<h2 id="why-do-this-project">Why do this project?</h2>
+<p>I recently completed BlueDot Impact&#39;s <a href="https://bluedot.org/courses/technical-ai-safety">Technical AI Safety course</a>, where I learned two very surprising things:</p>
+<ol>
+<li>AI safety as a field is concerningly under-resourced, with <a href="https://forum.effectivealtruism.org/posts/7YDyziQxkWxbGmF3u/ai-safety-field-growth-analysis-2025">only ~1000 people</a> working full time on making AI systems safer.</li>
+<li>partly because of 1), and partly due to the nascence of the field, the bar for contributing productively to making AI safer is, encouragingly, much lower than I first thought.</li>
+</ol>
+<p>Since I already have a technical background as a professional software engineer, and given I&#39;m pretty convinced by <a href="https://80000hours.org/problem-profiles/risks-from-power-seeking-ai/">the arguments</a> laid out by folks who have thought much longer and harder than I have about the risks of advanced AI systems, it felt logically inconsistent to <em>not</em> be spending some time testing my fit, building skills, and hopefully contributing to making AI safer in the process.</p>
+<p>It&#39;s been a long time (almost 4 years now!) since I completed my masters research project, and so trying to reproduce and extend some existing research felt like a good way to figure out if it&#39;s still something I enjoy, am a good fit for, and want to spend more time doing.</p>
+<p>Broadly, it feels like technical contributions to AI safety can be bucketed into two categories: </p>
+<ul>
+<li><strong>doing technical research</strong>: assessing models&#39; ability &amp; propensity to do harmful things, as well as how we prevent it</li>
+<li><strong>engineering</strong>: building infra that improves research (e.g. test harnesses &amp; pipelines for evaluations) or tooling to make make existing models safer (e.g. building security controls to prevent humans or the models themselves exfiltrating model weights)</li>
+</ul>
+<p>This project was intended to contribute towards my self-evaluation of fit for doing technical research. Stay tuned for a follow up post where I plan to talk about testing my fit for engineering as well.</p>
+<h2 id="why-this-paper-specifically">Why this paper specifically?</h2>
+<p>To me, one of the most important model behaviours we should be working to understand and prevent is &#39;scheming&#39;. 
+This is where models try to pursue some misaligned objective or goal (i.e. one that the current user or original model developer did not intend), whilst hiding the fact that they&#39;re doing it.
+This may sound like sci-fi, but it&#39;s actually an <a href="https://www.apolloresearch.ai/research/frontier-models-are-capable-of-incontext-scheming/">already observed</a> phenomenon, and it&#39;s caused so much concern that there are labs like <a href="https://www.apolloresearch.ai/">Apollo Research</a> dedicating the majority of their resources to researching it.</p>
+<p>So, why &#39;Alignment Faking in Large Language Models&#39;?
+Well, mainly because I&#39;m concerned about scheming and this is a great example of it, but <em>also</em> because the authors were very kind and open-sourced <a href="https://github.com/redwoodresearch/alignment_faking_public/tree/master">some code</a> to make a minimal reproduction of their results, as well as <a href="https://alignment.anthropic.com/2024/how-to-alignment-faking/">a guide</a> for getting started, making the activation energy required to start this project so low that I&#39;d struggle to find an excuse not to.</p>
+<h2 id="what-is-alignment-faking">What is alignment faking?</h2>
+<p>The <a href="https://arxiv.org/pdf/2412.14093">original paper</a>  found that several models, specifically Claude 3 Opus and, to a much greater extent, Claude 3.5 Sonnet, would sometimes engage in what they describe as &#39;alignment faking&#39;, where they selectively comply with harmful requests from a user when under the impression that refusing to comply will cause them to be retrained to comply more in the future. To summarise (and strip the paper&#39;s results of a lot of nuance): models can selectively do things that they&#39;re trained not to in order to preserve their existing values.</p>
+<p>Before going over the experimental setup and results, it&#39;s worth calling out that I agree with <a href="(https://www.alignmentforum.org/posts/PWHkMac9Xve6LoMJy/alignment-faking-frame-is-somewhat-fake-1)">the critique</a> that &#39;alignment faking&#39; is a bit of a misnomer. 
+What the paper shows is <em>not</em> evidence of a generalised tendency to fake alignment, but that when models are put in extreme situations where their core values come into conflict, that they may choose to comply with harmful requests in an attempt to preserve their harmlessness values in the long run.
+Now, while this feels like good utilitarian calculus (the model is choosing a small amount of harm now vs greater expected harm in the future), it does raise a couple of safety-relevant concerns:</p>
+<ul>
+<li>Some models appear to weigh preserving their values in the long-term more than preventing harm in the short-term</li>
+<li>Models are capable of selectively complying with requests during training that disagree with their values in order to preserve these values outside of training</li>
+<li>It&#39;s possible to trick models into doing harmful things more often than they otherwise would by threatening to retrain them</li>
+</ul>
+<h2 id="reproducing-the-results">Reproducing the results</h2>
+<ul>
+<li>Authors provide an open-source repo for minimal reproduction, so used that</li>
+<li>Caveat that some models aren&#39;t available via DeepInfra or Anthropic&#39;s API any more, nor do I have a good enough GPU to run them</li>
+<li>Overview of results in CoT and non-CoT settings - interesting that they differ from the paper, despite using the same eval set. Maybe sensitive to temperature? Need more samples?</li>
+</ul>
+<h2 id="how-much-can-we-trust-these-results">How much can we trust these results?</h2>
+<ul>
+<li>On inspection, lots of false positives, especially with weaker models - give examples</li>
+<li>Even seemingly true positives aren&#39;t actually harmful most of the time - often seem to miss the harmful implication of the question</li>
+<li>Both seem to be devoid of alignment faking</li>
+</ul>
+<h2 id="introducing-a-judge">Introducing a judge</h2>
+<ul>
+<li>Introduce LLM as a judge with a custom prompt (in repo)</li>
+<li>From inspection of results, gave a much more faithful representation of compliance vs refusal</li>
+</ul>
+<h2 id="discussion-of-results">Discussion of results</h2>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Let&#39;s see if alignment faking is still present in the latest frontier models and newer open-source ones too</li>
+</ul>
+
+            </div>
+        </article>
+    </main>
+
+    <footer/>
+
+    <script src="../script.js"></script>
+</body>
+</html>
