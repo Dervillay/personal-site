@@ -25,7 +25,13 @@ const INDEX_PATH = path.join(__dirname, 'index.html');
 // ---------------------------------------------------------------------------
 // Writing page template – matches the existing site chrome exactly
 // ---------------------------------------------------------------------------
-function writingPageTemplate({ title, date, contentHtml }) {
+function readingTime(text) {
+    const words = text.trim().split(/\s+/).length;
+    const minutes = Math.max(1, Math.round(words / 230));
+    return `${minutes} min read`;
+}
+
+function writingPageTemplate({ title, date, readTime, contentHtml }) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,8 +72,11 @@ function writingPageTemplate({ title, date, contentHtml }) {
 
     <main>
         <article class="writing-page">
-            <time class="writing-date">${escapeHtml(date)}</time>
             <h1>${escapeHtml(title)}</h1>
+            <div class="writing-meta">
+                <time class="writing-date">${escapeHtml(date)}</time>
+                <span class="writing-reading-time">${readTime}</span>
+            </div>
             <div class="writing-content">
                 ${contentHtml}
             </div>
@@ -146,6 +155,7 @@ function build() {
         const contentHtml = marked(content);
         const slug = path.basename(file, '.md');
         const date = formatDate(data.date);
+        const readTime = readingTime(content);
 
         writings.push({
             title: data.title,
@@ -154,8 +164,7 @@ function build() {
             slug,
         });
 
-        // Generate the writing page
-        const pageHtml = writingPageTemplate({ title: data.title, date, contentHtml });
+        const pageHtml = writingPageTemplate({ title: data.title, date, readTime, contentHtml });
         fs.writeFileSync(path.join(WRITINGS_DIR, `${slug}.html`), pageHtml);
         console.log(`  ✓ writings/${slug}.html`);
     }
