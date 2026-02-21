@@ -9,6 +9,9 @@ Thumbs.db
 *.swo
 *~
 
+# Dependencies
+node_modules/
+
 # Local development
 .env
 .env.local

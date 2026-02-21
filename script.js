@@ -48,14 +48,30 @@
 
 })();
 
-// Smooth scroll for navigation links
+// Copyable heading anchors on writing pages
 (function() {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const content = document.querySelector('.writing-content');
+    if (!content) return;
+
+    content.querySelectorAll('h2[id], h3[id], h4[id]').forEach(heading => {
+        heading.style.cursor = 'pointer';
+
+        heading.addEventListener('click', function() {
+            const url = window.location.origin + window.location.pathname + '#' + this.id;
+            history.replaceState(null, '', '#' + this.id);
+
+            function showFeedback() {
+                heading.classList.remove('fade-out', 'copied');
+                void heading.offsetWidth;
+                heading.classList.add('copied');
+                setTimeout(() => heading.classList.add('fade-out'), 800);
+                setTimeout(() => heading.classList.remove('copied', 'fade-out'), 1400);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(showFeedback, showFeedback);
+            } else {
+                showFeedback();
             }
         });
     });
