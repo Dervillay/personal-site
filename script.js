@@ -48,6 +48,26 @@
 
 })();
 
+// Article reading progress (writing pages)
+(function() {
+    const bar = document.querySelector('.reading-progress-bar');
+    if (!bar) return;
+
+    function update() {
+        const el = document.documentElement;
+        const max = el.scrollHeight - el.clientHeight;
+        const p = max <= 0 ? 1 : window.scrollY / max;
+        bar.style.width = `${Math.min(100, Math.max(0, p * 100))}%`;
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(update);
+    }
+    update();
+})();
+
 // Copyable heading anchors on writing pages
 (function() {
     const content = document.querySelector('.writing-content');

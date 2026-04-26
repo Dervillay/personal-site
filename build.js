@@ -53,6 +53,9 @@ function writingPageTemplate({ title, date, readTime, contentHtml }) {
     </svg>
 </head>
 <body>
+    <div class="reading-progress" aria-hidden="true">
+        <div class="reading-progress-bar"></div>
+    </div>
     <header>
         <nav>
             <a href="../index.html" class="site-title">James GB</a>

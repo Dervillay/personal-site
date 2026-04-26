@@ -20,6 +20,23 @@
     box-sizing: border-box;
 }
 
+.reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    z-index: 2000;
+    pointer-events: none;
+    background: transparent;
+}
+
+.reading-progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--text-secondary);
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -495,8 +512,7 @@ h3 {
 .writing-content h3[id],
 .writing-content h4[id] {
     position: relative;
-    display: inline;
-    gap: 0;
+    display: block;
 }
 
 .writing-content h2[id]::after,
