@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
-const matter = require('gray-matter');
 
 // ---------------------------------------------------------------------------
 // Config
@@ -97,6 +96,36 @@ function writingPageTemplate({ title, date, readTime, contentHtml }) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+// Minimal YAML front matter (title, date, excerpt) — no extra dependency
+function parseFrontMatter(raw) {
+    const text = raw.replace(/^\uFEFF/, '');
+    const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    if (!m) {
+        return { data: {}, content: text };
+    }
+    const data = {};
+    for (const line of m[1].split(/\r?\n/)) {
+        if (!line.trim() || /^\s*#/.test(line)) {
+            continue;
+        }
+        const idx = line.indexOf(':');
+        if (idx === -1) {
+            continue;
+        }
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        if (value.length >= 2) {
+            const a = value[0];
+            const b = value[value.length - 1];
+            if ((a === '"' && b === '"') || (a === "'" && b === "'")) {
+                value = value.slice(1, -1);
+            }
+        }
+        data[key] = value;
+    }
+    return { data, content: m[2] };
+}
+
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -150,7 +179,7 @@ function build() {
 
     for (const file of files) {
         const raw = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
-        const { data, content } = matter(raw);
+        const { data, content } = parseFrontMatter(raw);
 
         if (!data.title || !data.date) {
             console.warn(`  ⚠ Skipping ${file} – missing required front matter (title, date)`);
@@ -205,15 +234,34 @@ function build() {
 build();
 
 if (process.argv.includes('--watch')) {
-    console.log(`\nWatching content/ for changes...\n`);
+    // Poll mtimes: native watchers + chokidar often miss saves in WSL, SSH remote, VM shares, etc.
+    function getMarkdownMtimeSignature() {
+        if (!fs.existsSync(CONTENT_DIR)) {
+            return '';
+        }
+        return fs
+            .readdirSync(CONTENT_DIR)
+            .filter(f => f.endsWith('.md'))
+            .sort()
+            .map(f => {
+                const p = path.join(CONTENT_DIR, f);
+                return `${f}:${fs.statSync(p).mtimeMs}`;
+            })
+            .join('\0');
+    }
 
-    let debounce = null;
-    fs.watch(CONTENT_DIR, (_event, filename) => {
-        if (!filename || !filename.endsWith('.md')) return;
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-            console.log(`\n--- ${filename} changed ---\n`);
-            build();
-        }, 100);
-    });
+    let lastSignature = getMarkdownMtimeSignature();
+    const pollMs = 400;
+
+    setInterval(() => {
+        const next = getMarkdownMtimeSignature();
+        if (next === lastSignature) return;
+        lastSignature = next;
+        console.log(`\n--- content/*.md changed — rebuilding…\n`);
+        build();
+    }, pollMs);
+
+    console.log(
+        `\nPolling content/*.md every ${pollMs}ms. After each rebuild, refresh the page. Ctrl+C to stop.\n`,
+    );
 }

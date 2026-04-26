@@ -3,10 +3,11 @@
   "private": true,
   "scripts": {
     "build": "node build.js",
-    "watch": "node build.js --watch"
+    "watch": "node build.js --watch",
+    "serve": "node dev.js --serve-only",
+    "dev": "node dev.js"
   },
   "dependencies": {
-    "gray-matter": "^4.0.3",
     "marked": "^15.0.7"
   }
 }
