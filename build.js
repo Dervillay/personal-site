@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
+const lucide = require('./icons/lucide');
 
 // ---------------------------------------------------------------------------
 // Config
@@ -22,6 +23,47 @@ const WRITINGS_DIR = path.join(__dirname, 'writings');
 const INDEX_PATH = path.join(__dirname, 'index.html');
 
 // ---------------------------------------------------------------------------
+// Shared site chrome (keep in sync with index.html)
+// ---------------------------------------------------------------------------
+function renderSiteHeader({ basePath = '' }) {
+    const index = `${basePath}index.html`;
+    return `    <header>
+        <nav>
+            <a href="${index}#landing" class="site-title">James GB</a>
+            <div class="nav-right">
+                <div class="nav-links">
+                    <a href="${index}#projects" class="nav-link">Projects</a>
+                    <a href="${index}#writings" class="nav-link">Things I've Written</a>
+                </div>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    ${lucide.themeIcon('moon')}
+                </button>
+            </div>
+        </nav>
+    </header>`;
+}
+
+function validateIndexHtml(html) {
+    const warnings = [];
+    if (!html.includes('class="home"')) {
+        warnings.push('body is missing class="home"');
+    }
+    if (!html.includes('id="work"') || !html.includes('class="work-panel"')) {
+        warnings.push('missing #work.work-panel wrapper around projects and writings');
+    }
+    if (!html.includes('id="landing"')) {
+        warnings.push('missing #landing section');
+    }
+    if (!html.includes('href="#work"') || !html.includes('class="scroll-cue"')) {
+        warnings.push('missing scroll cue linking to #work');
+    }
+    if (!html.includes('<!-- WRITINGS:START -->') || !html.includes('<!-- WRITINGS:END -->')) {
+        warnings.push('missing WRITINGS:START / WRITINGS:END markers');
+    }
+    return warnings;
+}
+
+// ---------------------------------------------------------------------------
 // Writing page template – matches the existing site chrome exactly
 // ---------------------------------------------------------------------------
 function readingTime(text) {
@@ -30,7 +72,7 @@ function readingTime(text) {
     return `${minutes} min read`;
 }
 
-function writingPageTemplate({ title, date, readTime, contentHtml }) {
+function writingPageTemplate({ title, date, dateIso, readTime, contentHtml }) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,41 +84,18 @@ function writingPageTemplate({ title, date, readTime, contentHtml }) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
-    <svg style="position: absolute; width: 0; height: 0;">
-        <defs>
-            <filter id="rough-icon" x="-50%" y="-50%" width="200%" height="200%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="2" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8"/>
-            </filter>
-        </defs>
-    </svg>
 </head>
 <body>
     <div class="reading-progress" aria-hidden="true">
         <div class="reading-progress-bar"></div>
     </div>
-    <header>
-        <nav>
-            <a href="../index.html" class="site-title">James GB</a>
-            <div class="nav-right">
-                <div class="nav-links">
-                    <a href="../index.html#projects" class="nav-link">Projects</a>
-                    <a href="../index.html#writings" class="nav-link">Things I've Written</a>
-                </div>
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
-                    <svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none"></path>
-                    </svg>
-                </button>
-            </div>
-        </nav>
-    </header>
+${renderSiteHeader({ basePath: '../' })}
 
     <main>
         <article class="writing-page">
             <h1>${escapeHtml(title)}</h1>
             <div class="writing-meta">
-                <time class="writing-date">${escapeHtml(date)}</time>
+                <time class="writing-date" datetime="${escapeHtml(dateIso)}">${escapeHtml(date)}</time>
                 <span class="writing-reading-time">${readTime}</span>
             </div>
             <div class="writing-content">
@@ -134,13 +153,31 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-function formatDate(dateValue) {
-    // Accept a Date object or string like "2026-01-25"
-    const d = new Date(dateValue);
+function parseDate(dateValue) {
+    let d;
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        const [year, month, day] = dateValue.split('-').map(Number);
+        d = new Date(year, month - 1, day);
+    } else {
+        d = new Date(dateValue);
+    }
+
+    if (Number.isNaN(d.getTime())) {
+        const fallback = String(dateValue);
+        return { iso: fallback, display: fallback };
+    }
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const iso = `${year}-${month}-${day}`;
+    const display = d.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+
+    return { iso, display };
 }
 
 function generateWritingsListHtml(writings) {
@@ -150,7 +187,7 @@ function generateWritingsListHtml(writings) {
                         ${escapeHtml(w.excerpt)}
                     </p>
                     <div class="writing-meta-home">
-                        <time class="writing-date">${escapeHtml(w.date)}</time>
+                        <time class="tech-tag" datetime="${escapeHtml(w.dateIso)}">${escapeHtml(w.date)}</time>
                     </div>
                 </article>`).join('\n');
 }
@@ -188,26 +225,32 @@ function build() {
 
         const contentHtml = marked(content);
         const slug = path.basename(file, '.md');
-        const date = formatDate(data.date);
+        const { iso: dateIso, display: date } = parseDate(data.date);
         const readTime = readingTime(content);
 
         writings.push({
             title: data.title,
             date,
+            dateIso,
             excerpt: data.excerpt || '',
             slug,
         });
 
-        const pageHtml = writingPageTemplate({ title: data.title, date, readTime, contentHtml });
+        const pageHtml = writingPageTemplate({ title: data.title, date, dateIso, readTime, contentHtml });
         fs.writeFileSync(path.join(WRITINGS_DIR, `${slug}.html`), pageHtml);
         console.log(`  ✓ writings/${slug}.html`);
     }
 
     // Sort by date descending (newest first)
-    writings.sort((a, b) => new Date(b.date) - new Date(a.date));
+    writings.sort((a, b) => new Date(b.dateIso) - new Date(a.dateIso));
 
     // Update the writings list in index.html
     const indexHtml = fs.readFileSync(INDEX_PATH, 'utf-8');
+
+    for (const warning of validateIndexHtml(indexHtml)) {
+        console.warn(`  ⚠ index.html: ${warning}`);
+    }
+
     const startMarker = '<!-- WRITINGS:START -->';
     const endMarker = '<!-- WRITINGS:END -->';
 

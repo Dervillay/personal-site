@@ -3,30 +3,19 @@
     const themeToggle = document.getElementById('theme-toggle');
     const html = document.documentElement;
 
-    // Moon icon SVG path (doodle style - proper crescent)
-    const moonPath = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: url(#rough-icon);"></path>`;
-    
-    // Sun icon SVG paths (doodle style - simple sun)
-    const sunPaths = `<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: url(#rough-icon);"></circle>
-        <path d="M12 1.5l0 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M12 20.5l0 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M4.2 4.2l1.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M18 18l1.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M1.5 12l2.5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M20.5 12l2.5 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M4.2 19.8l1.8 -1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>
-        <path d="M18 6l1.8 -1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="filter: url(#rough-icon);"></path>`;
+    const moonIcon =
+        '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>';
+    const sunIcon =
+        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
 
-    // Check for saved theme preference or default to light mode
     const currentTheme = localStorage.getItem('theme') || 'light';
     html.setAttribute('data-theme', currentTheme);
     updateThemeIcon(currentTheme);
 
-    // Toggle theme on button click
     themeToggle.addEventListener('click', function() {
         const currentTheme = html.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
+
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
@@ -35,17 +24,100 @@
     function updateThemeIcon(theme) {
         const themeIcon = themeToggle.querySelector('.theme-icon');
         if (themeIcon) {
-            if (theme === 'dark') {
-                themeIcon.innerHTML = sunPaths;
-                themeIcon.setAttribute('style', 'filter: url(#rough-icon);');
-            } else {
-                themeIcon.innerHTML = moonPath;
-                themeIcon.setAttribute('style', 'filter: url(#rough-icon);');
-            }
+            themeIcon.innerHTML = theme === 'dark' ? sunIcon : moonIcon;
         }
         themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Toggle light mode' : 'Toggle dark mode');
     }
 
+})();
+
+// Homepage: combined scroll view vs focused nav sections
+(function() {
+    if (!document.body.classList.contains('home')) return;
+
+    const body = document.body;
+    const workPanel = document.getElementById('work');
+
+    function setView(mode) {
+        body.classList.remove('focus-projects', 'focus-writings');
+        if (mode === 'projects') body.classList.add('focus-projects');
+        if (mode === 'writings') body.classList.add('focus-writings');
+    }
+
+    function navigate(id, options) {
+        const opts = options || {};
+        const smooth = opts.smooth !== false;
+        const updateHistory = opts.updateHistory !== false;
+
+        if (id === 'projects') {
+            setView('projects');
+            scrollTo(document.getElementById('projects'), smooth);
+            if (updateHistory) history.pushState(null, '', '#projects');
+        } else if (id === 'writings') {
+            setView('writings');
+            scrollTo(document.getElementById('writings'), smooth);
+            if (updateHistory) history.pushState(null, '', '#writings');
+        } else if (id === 'work') {
+            setView('combined');
+            scrollTo(workPanel, smooth);
+            if (updateHistory) history.pushState(null, '', '#work');
+        } else if (id === 'landing') {
+            setView('combined');
+            scrollTo(document.getElementById('landing'), smooth);
+            if (updateHistory) history.pushState(null, '', '#landing');
+        }
+    }
+
+    function scrollTo(el, smooth) {
+        if (el) {
+            el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'center' });
+        }
+    }
+
+    const landing = document.getElementById('landing');
+
+    function restoreCombinedView() {
+        if (!body.classList.contains('focus-projects') && !body.classList.contains('focus-writings')) {
+            return;
+        }
+        setView('combined');
+        if (location.hash === '#projects' || location.hash === '#writings') {
+            history.replaceState(null, '', '#landing');
+        }
+    }
+
+    if (landing) {
+        const landingObserver = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) restoreCombinedView();
+            },
+            { threshold: 0.2 }
+        );
+        landingObserver.observe(landing);
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        const id = link.getAttribute('href').slice(1);
+        if (!id) return;
+        if (id !== 'work' && !document.getElementById(id)) return;
+
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            navigate(id);
+        });
+    });
+
+    window.addEventListener('popstate', function() {
+        const id = location.hash.replace('#', '') || 'landing';
+        if (id === 'projects' || id === 'writings' || id === 'work' || id === 'landing') {
+            navigate(id, { updateHistory: false, smooth: false });
+        }
+    });
+
+    const initial = location.hash.replace('#', '');
+    if (initial === 'projects' || initial === 'writings' || initial === 'work' || initial === 'landing') {
+        navigate(initial, { updateHistory: false, smooth: false });
+    }
 })();
 
 // Article reading progress (writing pages)
