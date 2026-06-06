@@ -70,7 +70,7 @@
 
     function scrollTo(el, smooth) {
         if (el) {
-            el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'center' });
+            el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'start' });
         }
     }
 
@@ -94,6 +94,19 @@
             { threshold: 0.2 }
         );
         landingObserver.observe(landing);
+    }
+
+    const scrollCue = document.querySelector('.scroll-cue');
+    if (scrollCue && workPanel) {
+        const workObserver = new IntersectionObserver(
+            ([entry]) => {
+                const hidden = entry.isIntersecting;
+                scrollCue.classList.toggle('is-hidden', hidden);
+                scrollCue.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+            },
+            { threshold: 0.05 }
+        );
+        workObserver.observe(workPanel);
     }
 
     document.querySelectorAll('a[href^="#"]').forEach(link => {

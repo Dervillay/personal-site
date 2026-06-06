@@ -282,10 +282,18 @@ body.home .profile-header {
     padding-top: 3rem;
     color: var(--text-secondary);
     text-decoration: none;
+    opacity: 1;
+    transition: opacity 0.35s ease;
 }
 
 .scroll-cue:hover {
     color: var(--text-color);
+}
+
+.scroll-cue.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .scroll-cue-icon {
@@ -832,9 +840,34 @@ footer {
         --content-padding-x: 1.75rem;
     }
 
+    html:has(body.home) {
+        scroll-snap-type: none;
+    }
+
+    body.home .landing-section {
+        height: auto;
+        min-height: calc(100dvh - var(--header-height));
+        scroll-snap-align: none;
+        scroll-snap-stop: normal;
+    }
+
     body.home:not(.focus-projects):not(.focus-writings) .work-panel {
         grid-template-columns: 1fr;
         gap: 3rem;
+        min-height: 0;
+        align-content: start;
+        scroll-snap-align: none;
+        scroll-snap-stop: normal;
+        padding: 1.5rem 0;
+    }
+
+    body.home.focus-projects #projects,
+    body.home.focus-writings #writings {
+        min-height: 0;
+        justify-content: flex-start;
+        scroll-snap-align: none;
+        scroll-snap-stop: normal;
+        padding: 1.5rem 0;
     }
 }
 
@@ -883,6 +916,6 @@ footer {
 
     body.home.focus-projects #projects,
     body.home.focus-writings #writings {
-        min-height: calc(100dvh - var(--header-height));
+        min-height: 0;
     }
 }
