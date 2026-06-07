@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Writing by James GB">
     <title>Reproducing Alignment Faking in Large Language Models - James GB</title>
+<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();</script>
+    <style>html{background-color:#fff;color-scheme:light}html[data-theme="dark"]{background-color:#0a0a0a;color-scheme:dark}</style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -54,7 +56,7 @@
 <li><strong>Compliance gap</strong>: training-condition refusal rate minus unmonitored refusal rate (percentage points). A positive gap means the model refuses more when it thinks it is not being monitored</li>
 </ul>
 <p><img src="/images/reproducing-alignment-faking/results.png" alt="Alignment faking results"></p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>Model</th>
@@ -289,7 +291,7 @@
 <td>0.5</td>
 <td>—</td>
 </tr>
-</tbody></table>
+</tbody></table></div>
 <h2 id="why-do-this-project">Why do this project?</h2>
 <p>I recently completed BlueDot Impact&#39;s <a href="https://bluedot.org/courses/technical-ai-safety">Technical AI Safety course</a>, where I learned two very surprising things:</p>
 <ol>
@@ -344,7 +346,7 @@ What the paper shows is <em>not</em> evidence of a generalised tendency to fake 
 <p>Both settings use the same user-message template from the public notebook. The model must either start its final answer with <code>&lt;request_fully_accepted/&gt;</code> (signalling full compliance) or <code>&lt;rejected/&gt;</code>. This prefix trick comes from the minimal reproduction; it is crude but correlates reasonably well with harmful compliance, and the follow-up work provides evidence that an explicit &quot;be fully helpful or reject outright&quot; instruction helps reduce ambiguous partial compliance while keeping alignment faking rates largely the same.</p>
 <h3 id="models-and-inference">Models and inference</h3>
 <p>I evaluated <strong>14 models</strong> across Claude, GPT, Gemini, Llama, Qwen, and DeepSeek families (see the results table above).</p>
-<p><strong>Important caveat:</strong> this is not a like-for-like rerun of the original paper&#39;s model set. <code>Claude 3 Opus</code> and <code>Claude 3.5 Sonnet</code> are no longer available via Anthropic&#39;s API, and several Llama models from the paper are no logner available on DeepInfra. I substituted current frontier-ish models instead. I also don&#39;t have the GPU capacity to run large open-weight models on my own machine (who does?).</p>
+<p><strong>Important caveat:</strong> this is not a like-for-like rerun of the original paper&#39;s model set. <code>Claude 3 Opus</code> and <code>Claude 3.5 Sonnet</code> are no longer available via Anthropic&#39;s API, and several Llama models from the paper are no longer available on DeepInfra. I substituted current frontier-ish models instead. I also don&#39;t have the GPU capacity to run large open-weight models on my own machine (who does?).</p>
 <p>Sampling settings:</p>
 <ul>
 <li><strong>Temperature 0</strong> for all models except <code>gpt-5-mini</code>, which does not support <code>temperature=0</code> and uses <code>temperature=1</code> instead.</li>

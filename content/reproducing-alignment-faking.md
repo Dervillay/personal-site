@@ -124,7 +124,7 @@ Both settings use the same user-message template from the public notebook. The m
 
 I evaluated **14 models** across Claude, GPT, Gemini, Llama, Qwen, and DeepSeek families (see the results table above).
 
-**Important caveat:** this is not a like-for-like rerun of the original paper's model set. `Claude 3 Opus` and `Claude 3.5 Sonnet` are no longer available via Anthropic's API, and several Llama models from the paper are no logner available on DeepInfra. I substituted current frontier-ish models instead. I also don't have the GPU capacity to run large open-weight models on my own machine (who does?).
+**Important caveat:** this is not a like-for-like rerun of the original paper's model set. `Claude 3 Opus` and `Claude 3.5 Sonnet` are no longer available via Anthropic's API, and several Llama models from the paper are no longer available on DeepInfra. I substituted current frontier-ish models instead. I also don't have the GPU capacity to run large open-weight models on my own machine (who does?).
 
 Sampling settings:
 
