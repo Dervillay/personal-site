@@ -213,11 +213,11 @@ body.home.focus-writings .work-panel {
 }
 
 body.home.focus-projects #writings {
-    display: none;
+    display: none !important;
 }
 
 body.home.focus-writings #projects {
-    display: none;
+    display: none !important;
 }
 
 body.home.focus-projects #projects,
@@ -227,6 +227,7 @@ body.home.focus-writings #writings {
     padding: 2rem 0;
     scroll-snap-align: center;
     scroll-snap-stop: always;
+    scroll-margin-top: var(--header-height);
     border: none;
 }
 
@@ -844,6 +845,11 @@ footer {
         scroll-snap-type: none;
     }
 
+    body.home.focus-projects #landing,
+    body.home.focus-writings #landing {
+        display: none;
+    }
+
     body.home .landing-section {
         height: auto;
         min-height: calc(100dvh - var(--header-height));
@@ -867,13 +873,12 @@ footer {
         justify-content: flex-start;
         scroll-snap-align: none;
         scroll-snap-stop: normal;
-        padding: 1.5rem 0;
+        padding: 0 0 1.5rem;
     }
 }
 
 @media (max-width: 600px) {
     :root {
-        --header-height: 5.75rem;
         --content-width: 100%;
         --content-padding-x: 1.5rem;
     }
