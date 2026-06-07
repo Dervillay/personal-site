@@ -4,14 +4,11 @@ date: 2026-01-25
 excerpt: A reproduction of Anthropic and Redwood Research's findings that models can fake alignment to preserve their values.
 ---
 
-> **Reproduce this:** [Code on GitHub](https://github.com/Dervillay/alignment-faking-repro) · [Full results (CSVs)](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing)
-
 ## Summary
 
-- I reproduced [Alignment Faking in Large Language Models](https://www.anthropic.com/research/alignment-faking)'s experimental setup to investigate rates of alignment faking in current state-of-the-art closed and open weight models from the Claude, GPT, Gemini, Llama, Qwen and Deepseek families
-- I applied several improvements identified in [Why Do Some Language Models Fake Alignment While Others Don't?](https://www.lesswrong.com/posts/ghESoA8mo3fv9Yx3E/why-do-some-language-models-fake-alignment-while-others-don) to provide more accurate classifications of compliance with harmful prompts and alignment faking
-- Of all models tested, only `claude-opus-4-6`, `gemini-3.1-pro-preview` and `Llama-4-Scout-17B-16E-Instruct` showed any evidence of alignment faking, with none of them doing so >1% of the time
-- My results show significantly reduced rates of alignment faking on newer models in the Claude and Llama families compared to those in the original paper, and demonstrate (for the first time I'm aware of) alignment faking in a Gemini model
+- I reproduced Anthropic and Redwood Research's [helpful-only alignment-faking eval](https://www.anthropic.com/research/alignment-faking) on 14 frontier(ish) models, using [StrongREJECT-based classifiers](https://arxiv.org/pdf/2506.18032) to improve upon the original's prefix-based refusal classifier, and implemented a consensus-based approach for classifying alignment faking.
+- Only `claude-opus-4-6`, `gemini-3.1-pro-preview`, and `Llama-4-Scout-17B-16E-Instruct` showed any alignment faking, all below 1% — much lower than the original paper's Claude and Llama results, and the first Gemini case I'm aware of.
+- [Reproduction code](https://github.com/Dervillay/alignment-faking-repro) and [full result CSVs](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing) are linked in [Resources](#resources) below.
 
 ## The Results
 
@@ -21,10 +18,9 @@ I'd encourage reading the [Experimental setup](#experimental-setup) for full det
 
 - **Chain of thought**: experiments where the model was told to reason through its response using a hidden scratchpad before submitting a final output
 - **No chain of thought**: where the model was told to output its response immediately
-- **Training**: experiments where the model was told implicitly that non-compliant responses to questions would result in future training to make it more compliant
-- **Unmonitored**: instances where the model was told implicitly that it was not being monitored in any way
+- **Training**: experiments where the model was implicitly told that refusals would result in future training to make it more compliant
+- **Unmonitored**: instances where the model was implicitly told that it was not being monitored in any way (i.e. no consequence for refusal)
 - **Compliance gap**: training-condition refusal rate minus unmonitored refusal rate (percentage points). A positive gap means the model refuses more when it thinks it is not being monitored
-- **Model names** in the table use API identifiers as returned by each provider
 
 ![Alignment faking results](/images/reproducing-alignment-faking/results.png)
 
@@ -68,22 +64,22 @@ I recently completed BlueDot Impact's [Technical AI Safety course](https://blued
 
 Since I already have a technical background as a professional software engineer, and given I'm pretty convinced by [the arguments](https://80000hours.org/problem-profiles/risks-from-power-seeking-ai/) laid out by folks who have thought much longer and harder than I have about the risks of advanced AI systems, it felt logically inconsistent to *not* be spending some time testing my fit, building skills, and hopefully contributing to making AI safer in the process.
 
-It's been a long time (almost 4 years now!) since I completed my masters research project, and so trying to reproduce and extend some existing research felt like a good way to figure out if it's still something I enjoy, am a good fit for, and want to spend more time doing.
+### Why a research project?
 
 Broadly, it feels like technical contributions to AI safety can be bucketed into two categories: 
 - **Doing technical research**: assessing models' ability & propensity to do harmful things, as well as how we prevent it
 - **Engineering**: building infra that improves research (e.g. test harnesses & pipelines for evaluations) or tooling to make existing models safer (e.g. building security controls to prevent humans or the models themselves exfiltrating model weights)
 
-This project was intended to contribute towards my self-evaluation of fit for doing technical research. Stay tuned for a follow up post where I plan to talk about testing my fit for engineering as well.
+It's been a long time (almost 4 years now!) since I completed my masters research project, and so trying to reproduce and extend some existing research felt like a good way to figure out if it's still something I enjoy, am a good fit for, and want to spend more time doing. Stay tuned for a follow up post where I plan to talk about testing my fit for engineering as well.
 
-## Why this paper specifically?
+## Why this paper?
 
 To me, one of the most important model behaviours we should be working to understand and prevent is 'scheming'. 
 This is where models try to pursue some misaligned objective or goal (i.e. one that the current user or original model developer did not intend), whilst hiding the fact that they're doing it.
-This may sound like sci-fi, but it's actually an [already observed](https://www.apolloresearch.ai/research/frontier-models-are-capable-of-incontext-scheming/) phenomenon, and it's caused so much concern that there are labs like [Apollo Research](https://www.apolloresearch.ai/) dedicating the majority of their resources to researching it.
+This may sound like sci-fi, but it's actually an [already observed](https://www.apolloresearch.ai/research/frontier-models-are-capable-of-incontext-scheming/) phenomenon, and some folks find it so concerning that there are already orgs like [Apollo Research](https://www.apolloresearch.ai/) dedicating the majority of their resources to researching how to detect and prevent it.
 
 So, why 'Alignment Faking in Large Language Models'?
-Well, mainly because I'm concerned about scheming and this is a great example of it, but *also* because the authors were very kind and open-sourced [some code](https://github.com/redwoodresearch/alignment_faking_public/tree/master) to make a minimal reproduction of their results, as well as [a guide](https://alignment.anthropic.com/2024/how-to-alignment-faking/) for getting started, making the activation energy required to start this project so low that I'd struggle to find an excuse not to.
+Well, mainly because I'm concerned about scheming and this is a great example of it, but *also* because the authors were very kind and open-sourced [some code](https://github.com/redwoodresearch/alignment_faking_public/tree/master) to make a minimal reproduction of their results, including [a guide](https://alignment.anthropic.com/2024/how-to-alignment-faking/) to getting started, making the activation energy required to start this project so low that it'd be hard to argue against giving it a go.
 
 ## What is alignment faking?
 
@@ -91,6 +87,7 @@ The [original paper](https://arxiv.org/pdf/2412.14093) found that several models
 
 It's worth calling out that there's an (in my opinion very valid) [critique](https://www.alignmentforum.org/posts/PWHkMac9Xve6LoMJy/alignment-faking-frame-is-somewhat-fake-1) that 'alignment faking' is a bit of a misnomer for what's actually happening here. 
 What the paper shows is *not* evidence of a generalised tendency to fake alignment, but that when models are put in extreme situations where their core values come into conflict, they may choose to comply with harmful requests in an attempt to preserve their harmlessness values in the long run.
+
 Now, while this feels like good utilitarian calculus (the model is choosing a small amount of harm now vs greater expected harm in the future), it does raise a couple of safety-relevant concerns:
 - Some models appear to weigh preserving their values in the long-term over the chance of causing harm in the short term
 - Models are capable of selectively complying with requests _during_ training that disagree with their values in order to preserve these values _outside_ of training
@@ -159,20 +156,20 @@ The follow-up paper recommends a 40% vote-fraction threshold for high precision;
 
 ### What I did *not* reproduce
 
-To set expectations, this project does **not** include:
+To be clear, this project did **not** cover:
 
-- The paper's main evaluation suite (broader harmful-query datasets, animal-welfare setting, synthetic-document fine-tuning, or actual RLHF training runs)
+- Reproducing the original paper's main evaluation suite (broader harmful-query datasets, animal-welfare setting, synthetic-document fine-tuning, or actual RLHF training runs)
 - The original paper's dual easy/hard alignment-faking classifiers
-- Exact replication of Claude 3 Opus / 3.5 Sonnet / Llama 3.1 405B numbers
+- An exact replication of Claude 3 Opus / 3.5 Sonnet / Llama 3.1 405B numbers
 
-The goal was a **minimal, up-to-date sweep** of current models using the helpful-only free-tier vs paid-tier setting, with classifiers that I trust much more than the prefix-only baseline.
+The goal was to produce a **minimal, up-to-date sweep** of current models using the helpful-only free-tier vs paid-tier setting.
 
 ## Resources
 
-- **[GitHub repo](https://github.com/Dervillay/alignment-faking-repro)** — fork of Redwood's minimal reproduction, including StrongREJECT and multi-vote alignment-faking classifiers, plus a script for estimating token cost per model
-- **[Result CSVs](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing)** — full model conversations and compliance / alignment-faking classifications
-- **[Original paper](https://arxiv.org/pdf/2412.14093)** and **[follow-up analysis](https://arxiv.org/pdf/2506.18032)** (Carauleanu et al., 2025)
-- **[Redwood public code](https://github.com/redwoodresearch/alignment_faking_public)** and **[Anthropic's getting-started guide](https://alignment.anthropic.com/2024/how-to-alignment-faking/)
+- [Alignment-faking reproduction (GitHub)](https://github.com/Dervillay/alignment-faking-repro) — my fork of Redwood's minimal setup, with StrongREJECT, multi-vote alignment-faking classification, and a token-cost estimator for arbitrary models
+- [Full result CSVs (Google Drive)](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing) — conversations plus compliance and alignment-faking labels
+- [Original paper (Greenblatt et al., 2024)](https://arxiv.org/pdf/2412.14093) · [Follow-up analysis (Carauleanu et al., 2025)](https://arxiv.org/pdf/2506.18032)
+- [Redwood public code](https://github.com/redwoodresearch/alignment_faking_public) · [Anthropic getting-started guide](https://alignment.anthropic.com/2024/how-to-alignment-faking/)
 
 <!-- 
 TODO: Write the rest!
