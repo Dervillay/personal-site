@@ -10,6 +10,8 @@
 
     const currentTheme = localStorage.getItem('theme') || 'light';
     html.setAttribute('data-theme', currentTheme);
+    html.style.backgroundColor = '';
+    html.style.colorScheme = '';
     updateThemeIcon(currentTheme);
 
     themeToggle.addEventListener('click', function() {
@@ -17,6 +19,8 @@
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
         html.setAttribute('data-theme', newTheme);
+        html.style.backgroundColor = '';
+        html.style.colorScheme = '';
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
     });
@@ -45,11 +49,64 @@
 
     syncHeaderHeight();
     window.addEventListener('resize', syncHeaderHeight, { passive: true });
+    if (window.ResizeObserver) {
+        new ResizeObserver(syncHeaderHeight).observe(header);
+    }
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(syncHeaderHeight);
     }
 
     window.syncHeaderHeight = syncHeaderHeight;
+})();
+
+// Hide header on scroll down, show on scroll up (all pages)
+(function() {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    function showHeader() {
+        header.classList.remove('header-hidden');
+    }
+
+    function hideHeader() {
+        header.classList.add('header-hidden');
+    }
+
+    function updateHeaderVisibility() {
+        const scrollY = window.scrollY;
+        const delta = scrollY - lastScrollY;
+
+        if (scrollY <= 0) {
+            showHeader();
+        } else if (delta > 8 && scrollY > 72) {
+            header.classList.add('header-hidden');
+        } else if (delta < -8) {
+            showHeader();
+        }
+
+        lastScrollY = scrollY;
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(updateHeaderVisibility);
+            ticking = true;
+        }
+    }, { passive: true });
+
+    header.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('click', showHeader, { passive: true });
+    });
+
+    window.showSiteHeader = showHeader;
+    window.hideSiteHeader = hideHeader;
+    window.syncHeaderScrollState = function(y) {
+        lastScrollY = y;
+    };
 })();
 
 // Homepage: combined scroll view vs focused nav sections
@@ -80,28 +137,66 @@
         return header ? header.getBoundingClientRect().height : 0;
     }
 
+    function cssVarPx(name) {
+        const styles = getComputedStyle(document.documentElement);
+        const raw = styles.getPropertyValue(name).trim();
+        if (!raw || raw === '0' || raw === '0px') return 0;
+        if (raw.endsWith('px')) return parseFloat(raw) || 0;
+        if (raw.endsWith('rem')) {
+            return (parseFloat(raw) || 0) * (parseFloat(styles.fontSize) || 16);
+        }
+        const probe = document.createElement('div');
+        probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;height:${raw}`;
+        document.documentElement.appendChild(probe);
+        const px = probe.getBoundingClientRect().height;
+        probe.remove();
+        return px;
+    }
+
+    function scrollOffset() {
+        return headerScrollOffset() + cssVarPx('--nav-scroll-gap');
+    }
+
     function scrollTargetFor(id) {
         const section = document.getElementById(id);
         if (!section) return null;
         return section.querySelector('h2') || section;
     }
 
-    function scrollTo(el, smooth) {
+    function scrollTo(el, smooth, options) {
         if (!el) return;
 
+        const opts = options || {};
         const behavior = smooth ? 'smooth' : 'auto';
         const run = () => {
-            const offset = headerScrollOffset();
+            const offset = opts.ignoreHeader ? (opts.topInset || 0) : scrollOffset();
             const top = el.getBoundingClientRect().top + window.scrollY - offset;
             window.scrollTo({ top: Math.max(0, top), behavior });
 
+            const finalize = () => {
+                if (window.syncHeaderScrollState) {
+                    window.syncHeaderScrollState(window.scrollY);
+                }
+            };
+
             if (behavior === 'auto') {
-                requestAnimationFrame(() => {
-                    const gap = el.getBoundingClientRect().top - offset;
+                function alignScrollTarget(attemptsLeft) {
+                    const targetOffset = opts.ignoreHeader ? (opts.topInset || 0) : scrollOffset();
+                    const gap = el.getBoundingClientRect().top - targetOffset;
                     if (Math.abs(gap) > 1) {
                         window.scrollBy({ top: gap, behavior: 'auto' });
                     }
-                });
+                    if (attemptsLeft > 0) {
+                        requestAnimationFrame(() => alignScrollTarget(attemptsLeft - 1));
+                    } else {
+                        finalize();
+                    }
+                }
+                requestAnimationFrame(() => alignScrollTarget(2));
+            } else if ('onscrollend' in window) {
+                window.addEventListener('scrollend', finalize, { once: true });
+            } else {
+                setTimeout(finalize, 700);
             }
         };
 
@@ -123,17 +218,24 @@
         if (id === 'projects') {
             if (updateHistory) history.pushState(null, '', '#projects');
             setView('projects');
+            if (window.showSiteHeader) window.showSiteHeader();
             scrollTo(scrollTargetFor('projects'), smooth);
         } else if (id === 'writings') {
             if (updateHistory) history.pushState(null, '', '#writings');
             setView('writings');
+            if (window.showSiteHeader) window.showSiteHeader();
             scrollTo(scrollTargetFor('writings'), smooth);
         } else if (id === 'work') {
             if (updateHistory) history.pushState(null, '', '#work');
             setView('combined');
-            scrollTo(workPanel, smooth);
+            if (window.hideSiteHeader) window.hideSiteHeader();
+            scrollTo(workPanel, smooth, { ignoreHeader: true });
         } else if (id === 'landing') {
             if (updateHistory) history.pushState(null, '', '#landing');
+            if (window.showSiteHeader) window.showSiteHeader();
+            if (isMobile) {
+                setView('combined');
+            }
             scrollTo(document.getElementById('landing'), smooth);
         }
     }
@@ -197,22 +299,39 @@
 
 // Article reading progress (writing pages)
 (function() {
-    const bar = document.querySelector('.reading-progress-bar');
-    if (!bar) return;
+    const progress = document.querySelector('.reading-progress');
+    const bar = progress && progress.querySelector('.reading-progress-bar');
+    if (!progress || !bar || !document.querySelector('.writing-page')) return;
 
-    function update() {
+    document.documentElement.prepend(progress);
+
+    function syncProgressTop() {
+        const top = window.visualViewport ? window.visualViewport.offsetTop : 0;
+        progress.style.top = `${top}px`;
+    }
+
+    function updateProgress() {
         const el = document.documentElement;
         const max = el.scrollHeight - el.clientHeight;
         const p = max <= 0 ? 1 : window.scrollY / max;
         bar.style.width = `${Math.min(100, Math.max(0, p * 100))}%`;
     }
 
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update, { passive: true });
-    if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(update);
+    function onUpdate() {
+        syncProgressTop();
+        updateProgress();
     }
-    update();
+
+    window.addEventListener('scroll', onUpdate, { passive: true });
+    window.addEventListener('resize', onUpdate, { passive: true });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('scroll', syncProgressTop, { passive: true });
+        window.visualViewport.addEventListener('resize', onUpdate, { passive: true });
+    }
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(onUpdate);
+    }
+    onUpdate();
 })();
 
 // Copyable heading anchors on writing pages

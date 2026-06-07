@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
-const lucide = require('./icons/lucide');
 
 // ---------------------------------------------------------------------------
 // Config
@@ -22,31 +21,47 @@ const CONTENT_DIR = path.join(__dirname, 'content');
 const WRITINGS_DIR = path.join(__dirname, 'writings');
 const INDEX_PATH = path.join(__dirname, 'index.html');
 
+const THEME_INIT = `<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light');})();</script>
+    <style>html{background-color:#fff;color-scheme:light}html[data-theme="dark"]{background-color:#0a0a0a;color-scheme:dark}</style>`;
+
 // ---------------------------------------------------------------------------
-// Shared site chrome (keep in sync with index.html)
+// Shared site chrome (extracted from index.html)
 // ---------------------------------------------------------------------------
-function renderSiteHeader({ basePath = '' }) {
-    const index = `${basePath}index.html`;
-    return `    <header>
-        <nav>
-            <a href="${index}#landing" class="site-title">James GB</a>
-            <div class="nav-right">
-                <div class="nav-links">
-                    <a href="${index}#projects" class="nav-link">Projects</a>
-                    <a href="${index}#writings" class="nav-link">Things I've Written</a>
-                </div>
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
-                    ${lucide.themeIcon('moon')}
-                </button>
-            </div>
-        </nav>
-    </header>`;
+function extractSiteHeader(indexHtml) {
+    const match = indexHtml.match(/^(\s*)<header>[\s\S]*?<\/header>/m);
+    if (!match) {
+        throw new Error('index.html is missing <header>...</header>');
+    }
+    return match[0];
+}
+
+function renderSiteHeader(indexHtml, { basePath = '' } = {}) {
+    let header = extractSiteHeader(indexHtml);
+
+    if (basePath) {
+        const indexHref = `${basePath}index.html`;
+        header = header.replace(/href="#([^"]+)"/g, `href="${indexHref}#$1"`);
+    }
+
+    const lines = header.split('\n');
+    const indents = lines.filter(line => line.trim()).map(line => line.match(/^\s*/)[0].length);
+    const minIndent = Math.min(...indents);
+
+    return lines
+        .map(line => (line.trim() ? '    ' + line.slice(minIndent) : ''))
+        .join('\n');
 }
 
 function validateIndexHtml(html) {
     const warnings = [];
     if (!html.includes('class="home"')) {
         warnings.push('body is missing class="home"');
+    }
+    if (!html.match(/<header>[\s\S]*?<\/header>/)) {
+        warnings.push('missing <header>...</header>');
+    }
+    if (!html.includes('localStorage.getItem(\'theme\')')) {
+        warnings.push('missing inline theme init script in <head>');
     }
     if (!html.includes('id="work"') || !html.includes('class="work-panel"')) {
         warnings.push('missing #work.work-panel wrapper around projects and writings');
@@ -66,13 +81,17 @@ function validateIndexHtml(html) {
 // ---------------------------------------------------------------------------
 // Writing page template – matches the existing site chrome exactly
 // ---------------------------------------------------------------------------
+function wrapWideContent(html) {
+    return html.replace(/<table(\s|>)/g, '<div class="table-scroll"><table$1').replace(/<\/table>/g, '</table></div>');
+}
+
 function readingTime(text) {
     const words = text.trim().split(/\s+/).length;
     const minutes = Math.max(1, Math.round(words / 230));
     return `${minutes} min read`;
 }
 
-function writingPageTemplate({ title, date, dateIso, readTime, contentHtml }) {
+function writingPageTemplate({ title, date, dateIso, readTime, contentHtml, indexHtml }) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,6 +99,7 @@ function writingPageTemplate({ title, date, dateIso, readTime, contentHtml }) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Writing by James GB">
     <title>${escapeHtml(title)} - James GB</title>
+${THEME_INIT}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -89,7 +109,7 @@ function writingPageTemplate({ title, date, dateIso, readTime, contentHtml }) {
     <div class="reading-progress" aria-hidden="true">
         <div class="reading-progress-bar"></div>
     </div>
-${renderSiteHeader({ basePath: '../' })}
+${renderSiteHeader(indexHtml, { basePath: '../' })}
 
     <main>
         <article class="writing-page">
@@ -213,6 +233,11 @@ function build() {
     }
 
     const writings = [];
+    const indexHtml = fs.readFileSync(INDEX_PATH, 'utf-8');
+
+    for (const warning of validateIndexHtml(indexHtml)) {
+        console.warn(`  ⚠ index.html: ${warning}`);
+    }
 
     for (const file of files) {
         const raw = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
@@ -223,7 +248,7 @@ function build() {
             continue;
         }
 
-        const contentHtml = marked(content);
+        const contentHtml = wrapWideContent(marked(content));
         const slug = path.basename(file, '.md');
         const { iso: dateIso, display: date } = parseDate(data.date);
         const readTime = readingTime(content);
@@ -236,7 +261,7 @@ function build() {
             slug,
         });
 
-        const pageHtml = writingPageTemplate({ title: data.title, date, dateIso, readTime, contentHtml });
+        const pageHtml = writingPageTemplate({ title: data.title, date, dateIso, readTime, contentHtml, indexHtml });
         fs.writeFileSync(path.join(WRITINGS_DIR, `${slug}.html`), pageHtml);
         console.log(`  ✓ writings/${slug}.html`);
     }
@@ -245,12 +270,6 @@ function build() {
     writings.sort((a, b) => new Date(b.dateIso) - new Date(a.dateIso));
 
     // Update the writings list in index.html
-    const indexHtml = fs.readFileSync(INDEX_PATH, 'utf-8');
-
-    for (const warning of validateIndexHtml(indexHtml)) {
-        console.warn(`  ⚠ index.html: ${warning}`);
-    }
-
     const startMarker = '<!-- WRITINGS:START -->';
     const endMarker = '<!-- WRITINGS:END -->';
 
