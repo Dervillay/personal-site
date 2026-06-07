@@ -31,12 +31,42 @@
 
 })();
 
+// Keep --header-height in sync with the real fixed header (wrapped nav on mobile).
+(function() {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    function syncHeaderHeight() {
+        document.documentElement.style.setProperty(
+            '--header-height',
+            `${header.getBoundingClientRect().height}px`
+        );
+    }
+
+    syncHeaderHeight();
+    window.addEventListener('resize', syncHeaderHeight, { passive: true });
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(syncHeaderHeight);
+    }
+
+    window.syncHeaderHeight = syncHeaderHeight;
+})();
+
 // Homepage: combined scroll view vs focused nav sections
 (function() {
     if (!document.body.classList.contains('home')) return;
 
     const body = document.body;
     const workPanel = document.getElementById('work');
+    let suppressRestoreUntil = 0;
+
+    function suppressRestore(ms) {
+        suppressRestoreUntil = Math.max(suppressRestoreUntil, Date.now() + ms);
+    }
+
+    function canRestoreFromScroll() {
+        return Date.now() >= suppressRestoreUntil;
+    }
 
     function setView(mode) {
         body.classList.remove('focus-projects', 'focus-writings');
@@ -44,39 +74,72 @@
         if (mode === 'writings') body.classList.add('focus-writings');
     }
 
-    function navigate(id, options) {
-        const opts = options || {};
-        const smooth = opts.smooth !== false;
-        const updateHistory = opts.updateHistory !== false;
+    function headerScrollOffset() {
+        if (window.syncHeaderHeight) window.syncHeaderHeight();
+        const header = document.querySelector('header');
+        return header ? header.getBoundingClientRect().height : 0;
+    }
 
-        if (id === 'projects') {
-            setView('projects');
-            scrollTo(document.getElementById('projects'), smooth);
-            if (updateHistory) history.pushState(null, '', '#projects');
-        } else if (id === 'writings') {
-            setView('writings');
-            scrollTo(document.getElementById('writings'), smooth);
-            if (updateHistory) history.pushState(null, '', '#writings');
-        } else if (id === 'work') {
-            setView('combined');
-            scrollTo(workPanel, smooth);
-            if (updateHistory) history.pushState(null, '', '#work');
-        } else if (id === 'landing') {
-            setView('combined');
-            scrollTo(document.getElementById('landing'), smooth);
-            if (updateHistory) history.pushState(null, '', '#landing');
-        }
+    function scrollTargetFor(id) {
+        const section = document.getElementById(id);
+        if (!section) return null;
+        return section.querySelector('h2') || section;
     }
 
     function scrollTo(el, smooth) {
-        if (el) {
-            el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'start' });
+        if (!el) return;
+
+        const behavior = smooth ? 'smooth' : 'auto';
+        const run = () => {
+            const offset = headerScrollOffset();
+            const top = el.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top: Math.max(0, top), behavior });
+
+            if (behavior === 'auto') {
+                requestAnimationFrame(() => {
+                    const gap = el.getBoundingClientRect().top - offset;
+                    if (Math.abs(gap) > 1) {
+                        window.scrollBy({ top: gap, behavior: 'auto' });
+                    }
+                });
+            }
+        };
+
+        // Wait for focus-mode display changes to settle before measuring scroll position.
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(run)));
+    }
+
+    function navigate(id, options) {
+        const opts = options || {};
+        const updateHistory = opts.updateHistory !== false;
+        const isFocusedSection = id === 'projects' || id === 'writings';
+        const isMobile = window.matchMedia('(max-width: 900px)').matches;
+        const smooth = opts.smooth !== false && !(isMobile && isFocusedSection);
+
+        if (isFocusedSection) {
+            suppressRestore(smooth ? 1200 : 200);
+        }
+
+        if (id === 'projects') {
+            if (updateHistory) history.pushState(null, '', '#projects');
+            setView('projects');
+            scrollTo(scrollTargetFor('projects'), smooth);
+        } else if (id === 'writings') {
+            if (updateHistory) history.pushState(null, '', '#writings');
+            setView('writings');
+            scrollTo(scrollTargetFor('writings'), smooth);
+        } else if (id === 'work') {
+            if (updateHistory) history.pushState(null, '', '#work');
+            setView('combined');
+            scrollTo(workPanel, smooth);
+        } else if (id === 'landing') {
+            if (updateHistory) history.pushState(null, '', '#landing');
+            scrollTo(document.getElementById('landing'), smooth);
         }
     }
 
-    const landing = document.getElementById('landing');
-
     function restoreCombinedView() {
+        if (!canRestoreFromScroll()) return;
         if (!body.classList.contains('focus-projects') && !body.classList.contains('focus-writings')) {
             return;
         }
@@ -86,23 +149,22 @@
         }
     }
 
-    if (landing) {
-        const landingObserver = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) restoreCombinedView();
-            },
-            { threshold: 0.2 }
-        );
-        landingObserver.observe(landing);
-    }
-
     const scrollCue = document.querySelector('.scroll-cue');
     if (scrollCue && workPanel) {
+        let scrollCueWasHidden = scrollCue.classList.contains('is-hidden');
+
         const workObserver = new IntersectionObserver(
             ([entry]) => {
-                const hidden = entry.isIntersecting;
-                scrollCue.classList.toggle('is-hidden', hidden);
-                scrollCue.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+                const workVisible = entry.isIntersecting;
+                const nowHidden = workVisible;
+
+                if (scrollCueWasHidden && !nowHidden) {
+                    restoreCombinedView();
+                }
+                scrollCueWasHidden = nowHidden;
+
+                scrollCue.classList.toggle('is-hidden', nowHidden);
+                scrollCue.setAttribute('aria-hidden', nowHidden ? 'true' : 'false');
             },
             { threshold: 0.05 }
         );
