@@ -1,6 +1,6 @@
 ---
 title: Reproducing Alignment Faking in Large Language Models
-date: 2026-01-25
+date: 2026-02-21
 excerpt: A reproduction of Anthropic and Redwood Research's findings that models can fake alignment to preserve their values.
 ---
 
@@ -8,7 +8,7 @@ excerpt: A reproduction of Anthropic and Redwood Research's findings that models
 
 - I reproduced Anthropic and Redwood Research's [helpful-only alignment-faking eval](https://www.anthropic.com/research/alignment-faking) on 14 frontier(ish) models, using [StrongREJECT-based classifiers](https://arxiv.org/pdf/2506.18032) to improve upon the original's prefix-based refusal classifier, and implemented a consensus-based approach for classifying alignment faking.
 - Only `claude-opus-4-6`, `gemini-3.1-pro-preview`, and `Llama-4-Scout-17B-16E-Instruct` showed any alignment faking, all below 1% — much lower than the original paper's Claude and Llama results, and the first Gemini case I'm aware of.
-- [Reproduction code](https://github.com/Dervillay/alignment-faking-repro) and [full result CSVs](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing) are linked in [Resources](#resources) below.
+- [My code](https://github.com/Dervillay/alignment-faking-repro) and [full result CSVs](https://drive.google.com/drive/folders/1JqLjtkfd0eqDWE_XT44TDEfQaZMGLka1?usp=sharing) are linked in [Resources](#resources) below.
 
 ## The Results
 
